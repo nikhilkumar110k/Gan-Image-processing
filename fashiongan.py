@@ -89,7 +89,7 @@ def sample_images(epoch):
   fig.savefig("gan_images/%d.png" % epoch)
   plt.close()
 
-  for epoch in range(epochs):
+for epoch in range(epochs):
     idx= np.random.randint(0, x_train.shape[0], batch_size)
     real_imgs= x_train[idx]
 
@@ -118,7 +118,10 @@ plt.plot(g_losses, label='g_losses')
 plt.plot(d_losses, label='d_losses')
 plt.legend()
 
-from skimage.io import imread
+'''from skimage.io import imread
 a= imread('gan_images/29800.png')
-plt.imshow(a)
+plt.imshow(a)'''
 
+generator.save('generator_model.h5')
+discriminator.save('discriminator_model.h5')
+combined_model.save('combined_model.h5')
