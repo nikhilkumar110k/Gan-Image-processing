@@ -7,6 +7,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import sys, os
 from tensorflow.keras.datasets import fashion_mnist
+from skimage.io import imread
 
 
 mnist= tf.keras.datasets.fashion_mnist
@@ -118,10 +119,9 @@ plt.plot(g_losses, label='g_losses')
 plt.plot(d_losses, label='d_losses')
 plt.legend()
 
-'''from skimage.io import imread
 a= imread('gan_images/29800.png')
-plt.imshow(a)'''
+plt.imshow(a)
 
-generator.save('generator_model.h5')
-discriminator.save('discriminator_model.h5')
-combined_model.save('combined_model.h5')
+generator.save('D:/Gan & image processing module/generator_model')
+discriminator.save('D:/Gan & image processing module/discriminator_model')
+combined_model.save('D:/Gan & image processing module/combined_model_model')
