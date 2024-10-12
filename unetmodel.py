@@ -1,17 +1,23 @@
-from tensorflow.keras.layers import Input, Dense, LeakyReLU, Dropout, BatchNormalization,Resizing
-from tensorflow.keras.models import Model,load_model
-from tensorflow.keras.optimizers import Adam, SGD
-import tensorflow as tf
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
-import sys, os
-from tensorflow.keras.layers import Cropping2D
-from tensorflow.keras.datasets import fashion_mnist
 import tensorflow as tf
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Conv2DTranspose, concatenate
-from tensorflow.keras.models import Model
-from tensorflow.keras.optimizers import Adam, SGD
+from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, Conv2DTranspose, concatenate, Cropping2D,Resizing
+from tensorflow.keras.models import load_model, Model
+
+generator = load_model('D:/Gan & image processing module/generator_model.h5')
+discriminator = load_model('D:/Gan & image processing module/discriminator_model.h5')
+combined_model = load_model('D:/Gan & image processing module/combined_model.h5')
+
+generator.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+discriminator.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+combined_model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+fashion_mnist_labels = [
+    'T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
+    'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot'
+]
+
+latent_dim = 100
 
 def sharpen_layer(x):
     kernel = tf.constant([[[[0, -1, 0]], [[-1, 5, -1]], [[0, -1, 0]]]], dtype=tf.float32)
@@ -70,8 +76,6 @@ def unet_with_sharpening_fashion(input_shape):
 
 
 unet_fashion_mnist_model = unet_with_sharpening_fashion((28, 28, 1)) 
-unet_fashion_mnist_model.summary()
-
 def grayscale_to_rgb(grayscale_img, color_choice):
     color_map = {
         "red": [1, 0, 0],
@@ -87,40 +91,36 @@ def grayscale_to_rgb(grayscale_img, color_choice):
     
     return rgb_img
 
+def generate_image_for_label(label, color_choice="gray"):
+    if label not in fashion_mnist_labels:
+        raise ValueError(f"Invalid label. Choose from: {fashion_mnist_labels}")
 
-generator = load_model('D:/Gan & image processing module/generator_model')
-discriminator = load_model('D:/Gan & image processing module/discriminator_model')
-combined_model = load_model('D:/Gan & image processing module/combined_model_model')
-
-unet_fashion_mnist_model = unet_with_sharpening_fashion((28, 28, 1))
-
-def grayscale_to_rgb(grayscale_img, color_choice):
-    color_map = {
-        "red": [1, 0, 0],
-        "green": [0, 1, 0],
-        "blue": [0, 0, 1],
-        "yellow": [1, 1, 0],
-        "cyan": [0, 1, 1],
-        "magenta": [1, 0, 1]
-    }
+    label_index = fashion_mnist_labels.index(label)
     
-    color = np.array(color_map.get(color_choice, [1, 1, 1])) 
-    rgb_img = np.stack([grayscale_img * color[i] for i in range(3)], axis=-1)
+    latent_vector = np.random.randn(1, latent_dim)
     
-    return rgb_img
+    label_vector = np.zeros((1, 10))  
+    label_vector[0, label_index] = 1
+    
+    generated_img = generator.predict([latent_vector, label_vector])  
+    generated_img = generated_img.reshape((28, 28, 1))  
 
-latent_dim = 100  
-noise = np.random.randn(1, latent_dim)  
-generated_img = generator.predict(noise)
+    sharpened_colored_img = unet_fashion_mnist_model.predict(generated_img[np.newaxis, ...])
 
-generated_img = generated_img.reshape((28, 28, 1))
+    if color_choice != "gray":
+        recolored_img = grayscale_to_rgb(sharpened_colored_img[0, ..., 0], color_choice)
+        return recolored_img
+    else:
+        return sharpened_colored_img 
+    
+user_label = "Sneaker"  
+user_color_choice = "blue"   
 
-sharpened_colored_img = unet_fashion_mnist_model.predict(generated_img[np.newaxis, ...])
+generated_img = generate_image_for_label(user_label, user_color_choice)
+generated_img = generated_img.reshape((28, 28, 1))  
 
-user_color = "blue"
-recolored_img = grayscale_to_rgb(sharpened_colored_img[0, ..., 0], user_color)
 
-plt.imshow(recolored_img)
+plt.imshow(generated_img)
 plt.axis('off')
 plt.show()
-
+plt.ioff()  
