@@ -61,6 +61,7 @@ def unet_with_sharpening_fashion(input_shape):
     c6 = sharpen_layer(c6)
 
     u7 = Conv2DTranspose(64, (2, 2), strides=(2, 2), padding='same')(c6)  
+    
 
     resized_c1 = Resizing(24, 24)(c1)
     u7 = concatenate([u7, resized_c1])
@@ -69,14 +70,17 @@ def unet_with_sharpening_fashion(input_shape):
     c7 = Conv2D(64, (3, 3), activation='relu', padding='same')(c7)
     c7 = sharpen_layer(c7)
 
-    outputs = Conv2D(3, (1, 1), activation='sigmoid')(c7)
+    outputs_image = Conv2D(1, (1, 1), activation='sigmoid', name="image_output")(c7)
+    outputs_mask = Conv2D(1, (1, 1), activation='sigmoid', name="mask_output")(c7)
 
-    model = Model(inputs=[inputs], outputs=[outputs])
+    model = Model(inputs=[inputs], outputs=[outputs_image, outputs_mask])
+
     return model
 
 
 unet_fashion_mnist_model = unet_with_sharpening_fashion((28, 28, 1)) 
-def grayscale_to_rgb(grayscale_img, color_choice):
+
+def grayscale_to_rgb(grayscale_img, color_choice, alpha=0.1):
     color_map = {
         "red": [1, 0, 0],
         "green": [0, 1, 0],
@@ -85,41 +89,41 @@ def grayscale_to_rgb(grayscale_img, color_choice):
         "cyan": [0, 1, 1],
         "magenta": [1, 0, 1]
     }
-    
-    color = np.array(color_map.get(color_choice, [1, 1, 1])) 
-    rgb_img = np.stack([grayscale_img * color[i] for i in range(3)], axis=-1)
+
+    color = np.array(color_map.get(color_choice, [1, 1, 1]))
+    grayscale_img = (grayscale_img - np.min(grayscale_img)) / (np.max(grayscale_img) - np.min(grayscale_img))
+    rgb_img = np.stack([grayscale_img * (1 - alpha) + color[i] * alpha for i in range(3)], axis=-1)
     
     return rgb_img
 
-def generate_image(label, color_choice="gray"):
+def generate_image_with_segmentation(label, color_choice="gray"):
     if label not in fashion_mnist_labels:
         raise ValueError(f"Invalid label. Choose from: {fashion_mnist_labels}")
 
     latent_dim = 100  
     latent_vector = np.random.randn(1, latent_dim)  
-
     label_index = fashion_mnist_labels.index(label)
-
-    
     label_vector = np.array([[label_index]])  
 
     generated_img = generator.predict([latent_vector, label_vector])
     generated_img = (generated_img[0, :, :, 0] * 0.5 + 0.5)  
 
-    sharpened_colored_img = unet_fashion_mnist_model.predict(generated_img[np.newaxis, ...])
+    sharpened_img, mask = unet_fashion_mnist_model.predict(generated_img[np.newaxis, ...])
 
+    mask = mask[0, :, :, 0]  
+    sharpened_img = sharpened_img[0, :, :, 0]  
     if color_choice != "gray":
-        recolored_img = grayscale_to_rgb(sharpened_colored_img[0, ..., 0], color_choice)
+        recolored_img = grayscale_to_rgb(sharpened_img, color_choice)
+        recolored_img = mask[..., np.newaxis] * recolored_img  
         return recolored_img
     else:
-        return sharpened_colored_img 
-
+        return sharpened_img * mask
 
     
-user_label = "Sneaker"  
-user_color_choice = "blue"   
+user_label = "T-shirt/top"  
+user_color_choice = "gray"   
 
-generated_img = generate_image(user_label, user_color_choice)
+generated_img = generate_image_with_segmentation(user_label, user_color_choice)
 
 
 plt.imshow(generated_img)
