@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow.keras.models import load_model
 
-generator = load_model('generator_model')
+generator = load_model('generator_model.h5')
 
 fashion_mnist_labels = [
     'T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
@@ -26,7 +26,7 @@ def generate_image(label):
     return generated_img
 
 try:
-    generated_img = generate_image("T-Shirt/Top")  
+    generated_img = generate_image("Sneaker")  
 
     plt.imshow(generated_img)
     plt.axis('off')
