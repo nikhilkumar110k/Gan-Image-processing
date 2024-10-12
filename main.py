@@ -26,7 +26,7 @@ def generate_image(label):
     return generated_img
 
 try:
-    generated_img = generate_image("Trouser")  
+    generated_img = generate_image("T-Shirt/Top")  
 
     plt.imshow(generated_img)
     plt.axis('off')

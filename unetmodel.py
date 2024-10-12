@@ -91,19 +91,20 @@ def grayscale_to_rgb(grayscale_img, color_choice):
     
     return rgb_img
 
-def generate_image_for_label(label, color_choice="gray"):
+def generate_image(label, color_choice="gray"):
     if label not in fashion_mnist_labels:
         raise ValueError(f"Invalid label. Choose from: {fashion_mnist_labels}")
 
+    latent_dim = 100  
+    latent_vector = np.random.randn(1, latent_dim)  
+
     label_index = fashion_mnist_labels.index(label)
+
     
-    latent_vector = np.random.randn(1, latent_dim)
-    
-    label_vector = np.zeros((1, 10))  
-    label_vector[0, label_index] = 1
-    
-    generated_img = generator.predict([latent_vector, label_vector])  
-    generated_img = generated_img.reshape((28, 28, 1))  
+    label_vector = np.array([[label_index]])  
+
+    generated_img = generator.predict([latent_vector, label_vector])
+    generated_img = (generated_img[0, :, :, 0] * 0.5 + 0.5)  
 
     sharpened_colored_img = unet_fashion_mnist_model.predict(generated_img[np.newaxis, ...])
 
@@ -112,12 +113,13 @@ def generate_image_for_label(label, color_choice="gray"):
         return recolored_img
     else:
         return sharpened_colored_img 
+
+
     
 user_label = "Sneaker"  
 user_color_choice = "blue"   
 
-generated_img = generate_image_for_label(user_label, user_color_choice)
-generated_img = generated_img.reshape((28, 28, 1))  
+generated_img = generate_image(user_label, user_color_choice)
 
 
 plt.imshow(generated_img)
