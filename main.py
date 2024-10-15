@@ -9,6 +9,9 @@ fashion_mnist_labels = [
     'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot'
 ]
 
+
+
+
 def generate_image(label):
     if label not in fashion_mnist_labels:
         raise ValueError(f"Invalid label. Choose from: {fashion_mnist_labels}")
@@ -26,7 +29,7 @@ def generate_image(label):
     return generated_img
 
 try:
-    generated_img = generate_image("Sneaker")  
+    generated_img = generate_image("Ankle boot")  
 
     plt.imshow(generated_img)
     plt.axis('off')
