@@ -135,4 +135,8 @@ for epoch in range(epochs):
 
 generator.save('generator_model')
 discriminator.save('discriminator_model')
+<<<<<<< HEAD
 combined_model.save('combined_model_model')
+=======
+combined_model.save('combined_model_model')
+>>>>>>> 6fac32f190d094170cdf4c6863e6c8258b163948
